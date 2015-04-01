@@ -24,3 +24,7 @@ Luego este archivo guardarlo con la extension -py (nombre-archivo.py)
 
 Y se compila con la lina de comando:
   python nombre-archivo.py
+  
+ANEXO:
+Con este video tutorial pudes trabajar python en SUBLIMETEXT
+https://www.youtube.com/watch?v=8OuZIRpeC_8
