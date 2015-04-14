@@ -35,6 +35,9 @@ def LeerComunas():
 def contarVoto(comunas):
     wb = load_workbook('data_servel.xlsx')
     ws = wb.get_sheet_by_name('Hoja1')
+    suma = 0
+    sumb = 0
+    sumc = 0
     for i in range(2, 200002):
         rut = ws.cell('A' + str(i))
         rut = str(rut.value)
@@ -42,7 +45,15 @@ def contarVoto(comunas):
         for j in range(len(comunas)):
             if str(comuna.value) == comunas[j][0]:
                 voto = Voto(comunas[j][2], comunas[j][3], comunas[j][4])
-                print("rut: " + rut + "________________   voto: " + str(voto))
+                if voto == 1:
+                    suma = suma + 1
+                elif voto == 2:
+                    sumb = sumb + 1
+                elif voto == 3:
+                    sumc = sumc + 1
+    print "izquierda: " + str(suma)
+    print "derecha: " + str(sumb)
+    print "independiente: " + str(sumc)
 
 comunas = LeerComunas()
 contarVoto(comunas)
