@@ -35,6 +35,6 @@ while dato != "":
 	for i in range(len(comunas)):
     		if datos[1] == comunas[i][0]:
 			 voto = Voto(comunas[i][1],comunas[i][2],comunas[i][3])
-			 print datos[0] + ";" + datos[1] + ";" + datos[2] + ";" + str(voto) + ";"
+			 print (datos[0] + ";" + datos[1] + ";" + datos[2] + ";" + str(voto) + ";")
 	dato = f.readline()
 f.close()
