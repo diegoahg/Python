@@ -34,11 +34,14 @@ def contarVoto(comunas):
     suma = 0
     sumb = 0
     sumc = 0
-    for x in xrange(1, 4):
+    for x in xrange(1, 14):
         archivo = 'data_servel_' + str(x) + '.csv'
+        print str(x)
         reader = csv.reader(open(archivo, 'rb'))
         for i, row in enumerate(reader):
-            comuna = row[1]
+            particion = str(row[0]).split(";")
+            comuna = particion[1]
+            sw = 0
             for j in range(len(comunas)):
                 if comuna == comunas[j][0]:
                     rango1 = int(comunas[j][2])
@@ -50,6 +53,9 @@ def contarVoto(comunas):
                         sumb = sumb + 1
                     else:
                         sumc = sumc + 1
+                    sw = 1
+            if sw == 0:
+                    print comuna
     sumtotal = suma + sumb + sumc
     print " izquierda: " + str(suma)
     print " derecha: " + str(sumb)
