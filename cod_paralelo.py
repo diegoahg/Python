@@ -1,12 +1,13 @@
 from mpi4py import MPI
-import numpy as np
 import csv
 import random
+import sys
 from time import time
 
 comm = MPI.COMM_WORLD
 rank = comm.rank
 size = comm.size
+name = MPI.Get_processor_name()
 
 
 def Voto(rango1, rango2):
@@ -37,13 +38,13 @@ def LeerComunas():
     return lista
 
 
-def contarVoto(comunas, inicio, fin):
+def contarVoto(comunas, inicio, fin, rank, name):
     suma = 0
     sumb = 0
     sumc = 0
     for x in xrange(inicio, fin):
         archivo = 'Data/data_servel_' + str(x) + '.csv'
-        print str(x)
+        print "Archivo: " + str(x)
         reader = csv.reader(open(archivo, 'rb'))
         for i, row in enumerate(reader):
             particion = str(row[0]).split(";")
@@ -64,10 +65,14 @@ def contarVoto(comunas, inicio, fin):
             if sw == 0:
                 print comuna + "hola"
     sumtotal = suma + sumb + sumc
-    print " izquierda: " + str(suma)
-    print " derecha: " + str(sumb)
-    print " independiente: " + str(sumc)
-    print " votos totales: " + str(sumtotal)
+    lista = dict(
+        izquerda=suma, derecha=sumb, independiente=sumc, total=sumtotal)
+    comm.send(lista, dest=0)
+    # print " izquierda: " + str(suma)
+    # print " derecha: " + str(sumb)
+    # print " independiente: " + str(sumc)
+    # print " votos totales: " + str(sumtotal)
+    sys.stdout.write("Termino Proceso %d en %s.\n" % (rank, name))
 
 
 def main():
@@ -75,24 +80,42 @@ def main():
         # comm.send(arrImg, dest=i)
         print "*****Paralelo*****"
         tiempo_inicial = time()
-        comunas = LeerComunas()
-        comm.send(1, dest=1)
-        comm.send(2, dest=2)
+        for i in range(1, 14):
+            comm.send(i, dest=i)
     if rank != 0:
         # cada procesador recibe un arreglo RGB que contiene un trozo
         # horizontal de la imagen
-        comunas = LeerComunas()
         archivo = comm.recv(source=0)
+        comunas = LeerComunas()
         # imagen
-        contarVoto(comunas, archivo, archivo + 1)
+        contarVoto(comunas, archivo, archivo + 1, rank, name)
         comm.send("OK" + str(archivo), dest=0)
         # recibe los arreglos y los junta uno abajo del otro
     if rank == 0:
-        ok1 = comm.recv(source=1)
-        ok2 = comm.recv(source=2)
+        # personas = []
+        izquerda = 0
+        derecha = 0
+        independiente = 0
+        totales = 0
+        for i in range(1, 14):
+            voto = comm.recv(source=i)
+            izquerda = izquerda + voto["izquerda"]
+            derecha = derecha + voto["derecha"]
+            independiente = independiente + voto["independiente"]
+            totales = totales + voto["total"]
+        # for j in range(len(personas)):
+            # print personas[j][0]
+            # izquerda = izquerda + personas[i]["izquerda"]
+            # derecha = derecha + personas[i]["derecha"]
+            # inependiente = inependiente + personas[i]["inependiente"]
+            # totales = totales + personas[i]["totales"]
+        print " izquierda: " + str(izquerda)
+        print " derecha: " + str(derecha)
+        print " independiente: " + str(independiente)
+        print " votos totales: " + str(totales)
         tiempo_final = time() - tiempo_inicial
         print "tiempo total de ejecucion: " + str(tiempo_final)
-        print ok1 + "-" + ok2
+        print "Listo"
         return 0
         # for i in range(1, size):
         #    if i > 1:
@@ -103,4 +126,3 @@ def main():
 
 
 main()
-print "Listo"
