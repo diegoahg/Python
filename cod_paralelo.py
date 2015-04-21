@@ -37,15 +37,15 @@ def LeerComunas():
     return lista
 
 
-def contarVoto(comunas):
+def contarVoto(comunas, inicio, fin):
     suma = 0
     sumb = 0
     sumc = 0
-    for x in xrange(1, 14):
+    for x in xrange(inicio, fin):
         archivo = 'Data/data_servel_' + str(x) + '.csv'
         print str(x)
         reader = csv.reader(open(archivo, 'rb'))
-        for i, row in enumerate(reader, start=100):
+        for i, row in enumerate(reader):
             particion = str(row[0]).split(";")
             comuna = particion[1]
             sw = 0
@@ -73,6 +73,7 @@ def contarVoto(comunas):
 def main():
     if rank == 0:
         # comm.send(arrImg, dest=i)
+        print "*****Paralelo*****"
         tiempo_inicial = time()
         comunas = LeerComunas()
         comm.send(1, dest=1)
@@ -80,17 +81,19 @@ def main():
     if rank != 0:
         # cada procesador recibe un arreglo RGB que contiene un trozo
         # horizontal de la imagen
+        comunas = LeerComunas()
         archivo = comm.recv(source=0)
         # imagen
         contarVoto(comunas, archivo, archivo + 1)
-        comm.send("OK" + archivo, dest=0)
+        comm.send("OK" + str(archivo), dest=0)
         # recibe los arreglos y los junta uno abajo del otro
     if rank == 0:
-        tiempo_final = time() - tiempo_inicial
-        print "tiempo total de ejecucion: " + str(tiempo_final)
         ok1 = comm.recv(source=1)
         ok2 = comm.recv(source=2)
+        tiempo_final = time() - tiempo_inicial
+        print "tiempo total de ejecucion: " + str(tiempo_final)
         print ok1 + "-" + ok2
+        return 0
         # for i in range(1, size):
         #    if i > 1:
         #        construcImg = np.concatenate(
@@ -100,3 +103,4 @@ def main():
 
 
 main()
+print "Listo"

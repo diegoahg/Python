@@ -63,8 +63,9 @@ def contarVoto(comunas, inicio, fin):
     print " independiente: " + str(sumc)
     print " votos totales: " + str(sumtotal)
 
+print "*****Secuencial*****"
 tiempo_inicial = time()
 comunas = LeerComunas()
-contarVoto(comunas, 1, 20)
+contarVoto(comunas, 1, 14)
 tiempo_final = time() - tiempo_inicial
 print "tiempo total de ejecucion: " + str(tiempo_final)
