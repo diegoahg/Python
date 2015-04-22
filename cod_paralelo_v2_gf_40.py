@@ -9,11 +9,11 @@ rank = comm.rank
 size = comm.size
 name = MPI.Get_processor_name()
 
-
 # Funcion que genera un voto en base a la probabilidad que tiene la comuna
 # es por esto que se entregan como rango1 el porcentaje que tiene el
 # partido de izquierda y rango2 como las suma de la probabilidad de
 # partido de izquierda junto con la probabilidad del partido de derecha.
+
 
 def Voto(rango1, rango2):
     probabilidad = random.randint(1, 100)
@@ -36,7 +36,7 @@ def Voto(rango1, rango2):
 
 
 def LeerComunas():
-    # Apertura de archivo.
+        # Apertura de archivo.
     reader = csv.reader(open('Data/comunas.csv', 'rb'))
     lista = []
     for i, row in enumerate(reader):
@@ -52,20 +52,20 @@ def LeerComunas():
         lista.append(dato)
     return lista
 
+
 # Funcion que lee la informacion entregada por SERVEL
 # comparando una comuna con sus probabilidades y utilizando
 # la funcion Voto. Teniendo el voto generado, se asigna al
 # partido politico.
 
-
-def contarVoto(comunas, inicio, fin, rank, name):
+def contarVoto(comunas, inicio, fin, rank, name, t_com, t_i):
     suma = 0
     sumb = 0
     sumc = 0
     for x in xrange(inicio, fin):
         # generacion del nombre "archivo" para leer la cantidad necesaria de
         # archivos.
-        archivo = 'Data/data_servel_' + str(x) + '.csv'
+        archivo = 'Data_40/data_servel_' + str(x) + '.csv'
         print "Archivo: " + str(x)
         # Guardar la informacion contenida en el archivo CSV para
         # disminuir el tiempo de lectura.
@@ -74,7 +74,6 @@ def contarVoto(comunas, inicio, fin, rank, name):
             # Particionar la informacion con el delimitador ";"
             particion = str(row[0]).split(";")
             comuna = particion[1]
-            sw = 0
             for j in range(len(comunas)):
                 # Se busca que la comuna leida en el archivo "data_server_'xx'"
                 # coincida con la lista de comunas, para asi, obtener sus
@@ -96,72 +95,75 @@ def contarVoto(comunas, inicio, fin, rank, name):
                         sumb = sumb + 1
                     else:
                         sumc = sumc + 1
-                    sw = 1
-            if sw == 0:
-                print comuna + "hola"
     sumtotal = suma + sumb + sumc
-    lista = dict(
-        izquerda=suma, derecha=sumb, independiente=sumc, total=sumtotal)
+    # tiempo final corresponde a todos los procedimientos y computos
+    # realizados por el rank activado
+    t_final = (time() - t_i)
+    lista = dict(izquerda=suma, derecha=sumb, independiente=sumc,
+                 total=sumtotal, t_com_nodo=t_com, tiempo=t_final)
     comm.send(lista, dest=0)
     sys.stdout.write("Termino Proceso %d en %s.\n" % (rank, name))
+
+# Funcion que distribuye la carga de archivos a procesar por cada nodo.
 
 
 def main():
     if rank == 0:
-        print "*****Paralelo Granularidad Gruesa*****"
+        print "*****Paralelo*****"
         tiempo_inicial = time()
-        if (size > 13):
-            for i in xrange(1, 14):
-                comm.send(i, dest=i)
-            for i in xrange(14, size):
-                comm.send(0, dest=i)
-        else:
-            archivos = 1
-            procesador = 1
-            while archivos < 14:
-                if procesador == size:
-                    procesador = 1
-                comm.send(archivos, dest=procesador)
-                procesador = procesador + 1
-                archivos = archivos + 1
+        comunas = LeerComunas()
+        for i in range(1, 40):
+            # tiempo inicial al enviar informacion al rank.
+            t_com_ini = time()
+            # lista que contiene el un numero y el tiempo inicial de
+            # comunicacion
+            listb = dict(numero=i, t_com_inicial=t_com_ini, comunas=comunas)
+            comm.send(listb, dest=i)
     if rank != 0:
-        archivo = comm.recv(source=0)
-        if archivo == 0:
-            lista = dict(
-                izquerda=0, derecha=0, independiente=0, total=0)
-            comm.send(lista, dest=0)
-            sys.stdout.write("Termino Proceso %d en %s.\n" % (rank, name))
-        else:
-            comunas = LeerComunas()
-            contarVoto(comunas, archivo, archivo + 1, rank, name)
+        # tiempo desde que comienza a funcionar el rank distinto de 0
+        t_recibido = time()
+        # se recibe la lista con el numero y el tiempo inicial de comunicacion
+        # entre el rank 0 y el rank actual
+        lista = comm.recv(source=0)
+        # tiempo de comunicacion es: el tiempo que comenzo a funcionar el rank
+        # junto con el tiempo de comunicacion enviado desde el rank 0
+        t_comunicacion = lista["t_com_inicial"] - t_recibido
+        # se muestra por pantalla los datos obtenidos.
+        print "comunicacion: " + str(t_comunicacion) + "- nodo: " + str(lista["numero"])
+        # el numero que viene en la lista se pasa a una variable
+        archivo = lista["numero"]
+        # se envia a contar voto con la lista de comunas, numero,
+        # numero +1, rank, tiempo de comunicacion calculado
+        # y tiempo incial que empieza a funcionar el rank
+        contarVoto(
+            lista["comunas"], archivo, archivo + 1, rank, name, t_comunicacion, t_recibido)
+        comm.send("OK" + str(archivo), dest=0)
     if rank == 0:
         izquerda = 0
         derecha = 0
         independiente = 0
         totales = 0
-        if (size > 13):
-            for i in range(1, size):
-                voto = comm.recv(source=i)
-                izquerda = izquerda + voto["izquerda"]
-                derecha = derecha + voto["derecha"]
-                independiente = independiente + voto["independiente"]
-                totales = totales + voto["total"]
-        else:
-            procesador = 1
-            for i in range(1, 14):
-                if procesador == (size):
-                    procesador = 1
-                voto = comm.recv(source=procesador)
-                izquerda = izquerda + voto["izquerda"]
-                derecha = derecha + voto["derecha"]
-                independiente = independiente + voto["independiente"]
-                totales = totales + voto["total"]
+        t_mayor = -1
+        t_com_total = 0
+        for i in range(1, 40):
+            voto = comm.recv(source=i)
+            izquerda = izquerda + voto["izquerda"]
+            derecha = derecha + voto["derecha"]
+            independiente = independiente + voto["independiente"]
+            totales = totales + voto["total"]
+            t_com_total = t_com_total + voto["t_com_nodo"]
+            if voto["tiempo"] > t_mayor:
+                t_mayor = voto["tiempo"]
         print " izquierda: " + str(izquerda)
         print " derecha: " + str(derecha)
         print " independiente: " + str(independiente)
         print " votos totales: " + str(totales)
+        print " Timpo comunicacion: " + str(t_com_total)
+        print " Tiempo Mayor de proceso: " + str(t_mayor)
         tiempo_final = time() - tiempo_inicial
         print "tiempo total de ejecucion: " + str(tiempo_final)
         print "Listo"
         return 0
+
+# Inicio del programa
 main()

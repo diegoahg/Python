@@ -110,7 +110,7 @@ def contarVoto(comunas, inicio, fin, rank, name):
 
 def main():
     if rank == 0:
-        print "*****Paralelo*****"
+        print "*****Paralelo Granularidad Fina de Datos*****"
         tiempo_inicial = time()
         for i in range(1, 41):
             comm.send(i, dest=i)
