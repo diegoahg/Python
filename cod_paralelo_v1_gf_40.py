@@ -112,13 +112,24 @@ def main():
     if rank == 0:
         print "*****Paralelo Granularidad Fina de Datos*****"
         tiempo_inicial = time()
-        for i in range(1, 41):
-            comm.send(i, dest=i)
+        if (size > 40):
+            for i in xrange(1, 41):
+                comm.send(i, dest=i)
+            for i in xrange(41, size):
+                comm.send(0, dest=i)
+        else:
+            for i in xrange(1, size):
+                comm.send(i, dest=i)
     if rank != 0:
         archivo = comm.recv(source=0)
-        comunas = LeerComunas()
-        contarVoto(comunas, archivo, archivo + 1, rank, name)
-        comm.send("OK" + str(archivo), dest=0)
+        if archivo == 0:
+            lista = dict(
+                izquerda=0, derecha=0, independiente=0, total=0, time=0)
+            comm.send(lista, dest=0)
+            sys.stdout.write("NO hay mas Archivos, Termino Proceso %d en %s.\n" % (rank, name))
+        else:
+            comunas = LeerComunas()
+            contarVoto(comunas, archivo, archivo + 1, rank, name)
     if rank == 0:
         izquerda = 0
         derecha = 0
