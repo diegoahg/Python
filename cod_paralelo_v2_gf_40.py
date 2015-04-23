@@ -109,7 +109,6 @@ def contarVoto(comunas, inicio, fin, rank, name, t_com, t_i):
 
 def main():
     if rank == 0:
-        print "*****Paralelo*****"
         tiempo_inicial = time()
         comunas = LeerComunas()
         for i in range(1, 40):
@@ -128,8 +127,6 @@ def main():
         # tiempo de comunicacion es: el tiempo que comenzo a funcionar el rank
         # junto con el tiempo de comunicacion enviado desde el rank 0
         t_comunicacion = lista["t_com_inicial"] - t_recibido
-        # se muestra por pantalla los datos obtenidos.
-        print "comunicacion: " + str(t_comunicacion) + "- nodo: " + str(lista["numero"])
         # el numero que viene en la lista se pasa a una variable
         archivo = lista["numero"]
         # se envia a contar voto con la lista de comunas, numero,
@@ -157,12 +154,10 @@ def main():
         print " izquierda: " + str(izquerda)
         print " derecha: " + str(derecha)
         print " independiente: " + str(independiente)
-        print " votos totales: " + str(totales)
         print " Timpo comunicacion: " + str(t_com_total)
         print " Tiempo Mayor de proceso: " + str(t_mayor)
         tiempo_final = time() - tiempo_inicial
         print "tiempo total de ejecucion: " + str(tiempo_final)
-        print "Listo"
         return 0
 
 # Inicio del programa
