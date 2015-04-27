@@ -56,6 +56,7 @@ def rangos(size):
         print "incio = " + str(inicio)
         print "fin = " + str(fin)
 
+juntardata()
 contardata()
 leerdata(0, 10)
 rangos(2)
