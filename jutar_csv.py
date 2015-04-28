@@ -45,18 +45,14 @@ def rangos(size):
     total = 12905887
     rango = int(total / size)
     resto = total - (rango * size)
-    for i in range(size):
+    for i in range(size-1):
         inicio = rango * i
         fin = rango * (i + 1)
         print "incio = " + str(inicio)
         print "fin = " + str(fin)
-    if resto > 0:
-        inicio = rango * size
-        fin = inicio + resto
-        print "incio = " + str(inicio)
-        print "fin = " + str(fin)
+    inicio = fin
+    fin = inicio + rango + resto
+    print "incio = " + str(inicio)
+    print "fin = " + str(fin)
 
-juntardata()
-contardata()
-leerdata(0, 10)
-rangos(2)
+rangos(3)

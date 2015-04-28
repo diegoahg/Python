@@ -1,8 +1,8 @@
 from mpi4py import MPI
+from time import time
 import csv
 import random
-import sys
-from time import time
+
 
 comm = MPI.COMM_WORLD
 rank = comm.rank
@@ -45,7 +45,7 @@ def contarVoto(comunas, inicio, fin, rank, name, t_com, t_i):
     sumc = 0
     for x in xrange(inicio, fin + 1):
         archivo = 'Data_40/data_servel_' + str(x) + '.csv'
-        print "Archivo: " + str(x)
+        print "Archivo: " + str(x) + "  Procesador: " + str(rank)
         reader = csv.reader(open(archivo, 'rb'))
         for i, row in enumerate(reader):
             particion = str(row[0]).split(";")
@@ -65,8 +65,12 @@ def contarVoto(comunas, inicio, fin, rank, name, t_com, t_i):
     t_final = (time() - t_i)
     lista = dict(izquerda=suma, derecha=sumb, independiente=sumc,
                  total=sumtotal, t_com_nodo=t_com, tiempo=t_final)
-    print ("Termine ctm")
+    print " izquierda: " + str(suma)
+    print " derecha: " + str(sumb)
+    print " independiente: " + str(sumc)
+    print " Total " + str(sumtotal)
     comm.send(lista, dest=0)
+    print ("Termine ctm")
 
 
 def main():
@@ -77,14 +81,15 @@ def main():
         z = 0
         x = 0
         r_2 = 0
-        while z <= size:
+        print str(size) + "  soy size"
+        while z < size:
             r_1 = 1 + x
             x = (40 / size)
-            print "soy x" + str(x)
             z = z + 1
             r_2 = x * z
             x = r_2
-            print str(x) + "---" + str(r_1) + "---" + str(r_2)
+            print str(r_1) + "  soy r1"
+            print str(r_2) + "  soy r2"
             t_com_ini = time()
             listb = dict(
                 numero=z, t_com_inicial=t_com_ini, comunas=comunas, rango_1=r_1, rango_2=r_2)
