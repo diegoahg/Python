@@ -2,6 +2,7 @@ from mpi4py import MPI
 import csv
 import random
 import sys
+import os
 from time import time
 
 comm = MPI.COMM_WORLD
@@ -58,17 +59,15 @@ def LeerComunas():
 # partido politico.
 
 
-def contarVoto(comunas, inicio, fin, rank, name):
+def contarVoto(comunas, archivo, rank, name):
     wt = MPI.Wtime()
     suma = 0
     sumb = 0
     sumc = 0
-    f = open('Data/data_total.csv', 'r')
-    p = f.readlines()
-    primera = p[inicio:fin]
+    reader = csv.reader(open('TMP/' + str(archivo) + '.csv', 'rb'))
     # sw = 0
-    for l in primera:
-        particion = str(l).split(";")
+    for i, row in enumerate(reader):
+        particion = str(row[0]).split(";")
         comuna = particion[1].rstrip()
         for j in range(len(comunas)):
             # Se busca que la comuna leida en el archivo "data_server_'xx'"
@@ -103,15 +102,17 @@ def contarVoto(comunas, inicio, fin, rank, name):
 
 
 def HacerCsv(nombre, data):
-    writer = csv.writer(open("TMP/nombre.csv", "wb"))
+    writer = csv.writer(open("TMP/" + str(nombre) + ".csv", "wb"))
     for l in data:
         particion = str(l).split(";")
+        particion[1] = particion[1].rstrip()
+        particion[0] = particion[0].rstrip()
         writer.writerow([particion[0] + ";" + particion[1]])
 
 
 def main():
     if rank == 0:
-        print "*****Paralelo Granularidad Fina de Codigo*****"
+        print "*****Paralelo Granularidad Fina de Codigo Version 2*****"
         tiempo_inicial = time()
         total = 12905887
         rango = int(total / (size - 1))
@@ -123,19 +124,21 @@ def main():
             inicio = rango * i
             fin = rango * (i + 1)
             process = process + 1
-            
-            rangos = [inicio, fin]
-
-        comm.send(rangos, dest=process)
+            primera = p[inicio:fin]
+            HacerCsv(process, primera)
+            print "hice algo " + str(i)
         inicio = fin
         fin = inicio + rango + resto
         process = process + 1
-        rangos = [inicio, fin]
-        comm.send(rangos, dest=process)
+        primera = p[inicio:fin]
+        HacerCsv(process, primera)
+        print "hice algo " + str(i+1)
+        for i in range(1, size):
+            comm.send(i, dest=i)
     if rank != 0:
         archivo = comm.recv(source=0)
         comunas = LeerComunas()
-        contarVoto(comunas, archivo[0], archivo[1], rank, name)
+        contarVoto(comunas, archivo, rank, name)
     if rank == 0:
         izquerda = 0
         derecha = 0
@@ -149,6 +152,13 @@ def main():
             independiente = independiente + voto["independiente"]
             totales = totales + voto["total"]
         tiempo_final = time() - tiempo_inicial
+        print " Izquierda: " + str(izquerda)
+        print " Derecha: " + str(derecha)
+        print " Independiente: " + str(independiente)
+        print " Votos totales: " + str(totales)
         print "Tiempo total de ejecucion: " + str(tiempo_final)
+        for i in range(1, size):
+            archivo = 'TMP/' + str(i) + '.csv'
+            os.remove(archivo)
         return 0
 main()
